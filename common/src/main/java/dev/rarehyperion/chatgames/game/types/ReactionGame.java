@@ -3,7 +3,6 @@ package dev.rarehyperion.chatgames.game.types;
 import dev.rarehyperion.chatgames.ChatGamesCore;
 import dev.rarehyperion.chatgames.game.AbstractGame;
 import dev.rarehyperion.chatgames.game.GameConfig;
-import dev.rarehyperion.chatgames.game.GameType;
 import dev.rarehyperion.chatgames.util.MessageUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
@@ -25,7 +24,7 @@ public class ReactionGame extends AbstractGame {
     public final String clickToken;
 
     public ReactionGame(final ChatGamesCore plugin, final GameConfig config) {
-        super(plugin, config, GameType.TRIVIA);
+        super(plugin, config);
         this.variant = this.selectRandom(config.getReactionVariants());
         this.clickToken = UUID.randomUUID().toString();
     }

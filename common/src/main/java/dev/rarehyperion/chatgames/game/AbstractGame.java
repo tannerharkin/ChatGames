@@ -14,28 +14,26 @@ public abstract class AbstractGame implements Game {
 
     protected final ChatGamesCore plugin;
     protected final GameConfig config;
-    protected final GameType type;
 
-    protected AbstractGame(final ChatGamesCore plugin, final GameConfig config, GameType type) {
+    protected AbstractGame(final ChatGamesCore plugin, final GameConfig config) {
         this.plugin = plugin;
         this.config = config;
-        this.type = type;
     }
 
     @Override
     public GameType getType() {
-        return this.type;
+        return this.config.getType();
     }
 
     @Override
     public void onStart() {
-        this.plugin.platform().dispatchStart(this.type, MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands());
+        this.plugin.platform().dispatchStart(getType(), MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands());
         this.start();
     }
 
     @Override
     public void onEnd() {
-        this.plugin.platform().dispatchEnd(this.type, MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands(), EndReason.COMMAND);
+        this.plugin.platform().dispatchEnd(getType(), MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands(), EndReason.COMMAND);
     }
 
     @Override
@@ -50,7 +48,7 @@ public abstract class AbstractGame implements Game {
                 this.plugin.platform().dispatchCommand(processed);
             }
 
-            this.plugin.platform().dispatchWin(winner, this.type, MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands());
+            this.plugin.platform().dispatchWin(winner, getType(), MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands());
         });
     }
 
@@ -58,7 +56,7 @@ public abstract class AbstractGame implements Game {
     public void onTimeout() {
         final Component message = this.config.getTimeoutMessage(this.getCorrectAnswer().orElse("Unknown"));
         this.plugin.broadcast(message);
-        this.plugin.platform().dispatchEnd(this.type, MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands(), EndReason.TIMEOUT);
+        this.plugin.platform().dispatchEnd(getType(), MessageUtil.plainText(this.getQuestion()), this.getCorrectAnswer().orElse(null), this.config.getRewardCommands(), EndReason.TIMEOUT);
     }
 
     @Override
