@@ -1,6 +1,10 @@
 package dev.rarehyperion.chatgames.platform.impl;
 
 import dev.rarehyperion.chatgames.ChatGamesCore;
+import dev.rarehyperion.chatgames.afk.AfkProviderRegistry;
+import dev.rarehyperion.chatgames.afk.providers.AntiAfkPlusProvider;
+import dev.rarehyperion.chatgames.afk.providers.CmiAfkProvider;
+import dev.rarehyperion.chatgames.afk.providers.EssentialsAfkProvider;
 import dev.rarehyperion.chatgames.command.CommandRegistry;
 import dev.rarehyperion.chatgames.command.SpigotChatGamesCommand;
 import dev.rarehyperion.chatgames.config.Config;
@@ -182,6 +186,13 @@ public class SpigotPlatform implements Platform {
     @Override
     public void dispatchEnd(GameType type, String question, String answer, List<String> rewards, final EndReason reason) {
         Bukkit.getPluginManager().callEvent(new ChatGameEndEvent(type, question, answer, rewards, reason));
+    }
+
+    @Override
+    public void registerAfkProviders(final AfkProviderRegistry registry) {
+        registry.register(new EssentialsAfkProvider());
+        registry.register(new CmiAfkProvider());
+        registry.register(new AntiAfkPlusProvider());
     }
 
 }
