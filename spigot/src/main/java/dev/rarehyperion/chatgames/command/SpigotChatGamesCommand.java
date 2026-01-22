@@ -1,7 +1,6 @@
 package dev.rarehyperion.chatgames.command;
 
 import dev.rarehyperion.chatgames.ChatGamesCore;
-import dev.rarehyperion.chatgames.game.GameConfig;
 import dev.rarehyperion.chatgames.platform.PlatformSender;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -12,14 +11,20 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
+/**
+ * Spigot-specific command implementation using CommandExecutor and TabCompleter.
+ * Delegates tab completion and permissions to handlers via CommandRegistry.
+ *
+ * @author RareHyperIon, tannerharkin
+ */
 public class SpigotChatGamesCommand extends ChatGamesCommand implements CommandExecutor, TabCompleter {
 
-    public SpigotChatGamesCommand(final ChatGamesCore plugin) {
-        super(plugin);
+    public SpigotChatGamesCommand(final ChatGamesCore plugin, final CommandRegistry registry) {
+        super(plugin, registry);
     }
 
     @Override
@@ -31,24 +36,47 @@ public class SpigotChatGamesCommand extends ChatGamesCommand implements CommandE
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args) {
         if (args.length == 1) {
-            final List<String> subCommands = Arrays.asList("reload", "start", "stop", "list", "toggle", "info", "help");
+            // Complete subcommand names, filtered by permission from handlers
+            final List<String> suggestions = new ArrayList<>();
+            final String partial = args[0].toLowerCase();
 
-            return subCommands.stream()
-                    .filter(sub -> sub.equals("info") || sender.hasPermission("chatgames." + sub))
-                    .filter(sub -> sub.startsWith(args[0].toLowerCase()))
-                    .collect(Collectors.toList());
+            for (final SubCommand subCommand : SubCommand.values()) {
+                final SubCommandHandler handler = this.registry.getHandler(subCommand);
+                if (handler == null) {
+                    continue;
+                }
+
+                // Skip commands with null usage (hidden commands)
+                if (handler.getUsage() == null) {
+                    continue;
+                }
+
+                // Check permission from handler
+                final String permission = handler.getPermission();
+                if (permission != null && !sender.hasPermission(permission)) {
+                    continue;
+                }
+
+                final String name = subCommand.getName();
+                if (name.startsWith(partial)) {
+                    suggestions.add(name);
+                }
+            }
+
+            return suggestions;
         }
 
-        if (args.length > 1 && args[0].equalsIgnoreCase("start") && sender.hasPermission("chatgames.start")) {
-            final String partial = String.join(" ", Arrays.copyOfRange(args, 1, args.length)).toLowerCase();
-
-            return this.plugin.gameRegistry().getAllConfigs().stream()
-                    .map(GameConfig::getName).filter(Objects::nonNull)
-                    .filter(name -> name.toLowerCase().startsWith(partial))
-                    .collect(Collectors.toList());
+        if (args.length > 1) {
+            // Delegate to handler's tab completion
+            final Optional<SubCommand> optionalCmd = SubCommand.fromName(args[0]);
+            if (optionalCmd.isPresent()) {
+                final SubCommand subCommand = optionalCmd.get();
+                final PlatformSender platformSender = this.plugin.platform().wrapSender(sender);
+                final String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
+                return this.registry.tabComplete(subCommand, platformSender, subArgs);
+            }
         }
 
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
-
 }

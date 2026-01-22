@@ -1,37 +1,37 @@
 package dev.rarehyperion.chatgames.command;
 
-import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import dev.rarehyperion.chatgames.ChatGamesCore;
-import dev.rarehyperion.chatgames.game.GameConfig;
 import dev.rarehyperion.chatgames.platform.PlatformSender;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Paper-specific command implementation using Brigadier.
+ * Delegates tab completion and permissions to handlers via CommandRegistry.
+ *
+ * @author RareHyperIon, tannerharkin
+ */
 @SuppressWarnings({"UnstableApiUsage"})
 public class PaperChatGamesCommand extends ChatGamesCommand {
 
-    public PaperChatGamesCommand(final ChatGamesCore plugin) {
-        super(plugin);
+    public PaperChatGamesCommand(final ChatGamesCore plugin, final CommandRegistry registry) {
+        super(plugin, registry);
     }
 
     /**
-     * Building the full command tree:
-     * /chatgames
-     *   reload
-     *   start <game>
-     *   stop
-     *   list
-     *   toggle
-     *   info
+     * Builds the full command tree from SubCommand enum.
+     * Permission checks and argument handling are delegated to handlers.
+     *
+     * @return The root command node.
      */
     public LiteralCommandNode<CommandSourceStack> build() {
         final LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("chatgames")
@@ -41,35 +41,34 @@ public class PaperChatGamesCommand extends ChatGamesCommand {
                     return 1;
                 });
 
-        final String[][] subCommands = {
-                {"reload", "chatgames.reload"},
-                {"start", "chatgames.start"},
-                {"stop", "chatgames.stop"},
-                {"list", "chatgames.list"},
-                {"toggle", "chatgames.toggle"},
-                {"help", "chatgames.help"},
-                {"answer", null},
-                {"info", null} // We want info to be accessed by anyone.
-        };
+        // Build subcommands from SubCommand enum
+        for (final SubCommand subCommand : SubCommand.values()) {
+            final SubCommandHandler handler = this.registry.getHandler(subCommand);
+            final LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal(subCommand.getName());
 
-        for(final String[] command : subCommands) {
-            final String name = command[0];
-            final String permission = command[1];
-
-            final LiteralArgumentBuilder<CommandSourceStack> node = Commands.literal(name);
-            if(permission != null) node.requires(ctx -> ctx.getSender().hasPermission(permission));
-
-            if("start".equals(name)) {
-                node.then(this.createArgumentNode(name, "game", StringArgumentType.greedyString()));
-            } else if("answer".equals(name)) {
-                node.then(this.createArgumentNode(name, "token", StringArgumentType.string()));
-            } else {
-                node.executes(ctx -> {
-                    final PlatformSender sender = this.plugin.platform().wrapSender(ctx.getSource().getSender());
-                    this.handleCommand(sender, new String[]{name});
-                    return 1;
-                });
+            // Add permission requirement from handler if needed
+            final String permission = handler != null ? handler.getPermission() : null;
+            if (permission != null) {
+                node.requires(ctx -> ctx.getSender().hasPermission(permission));
             }
+
+            // Execute without arguments
+            node.executes(ctx -> {
+                final PlatformSender sender = this.plugin.platform().wrapSender(ctx.getSource().getSender());
+                this.handleCommand(sender, new String[]{subCommand.getName()});
+                return 1;
+            });
+
+            // Add optional greedy argument for commands that may need arguments
+            // The handler will validate and use arguments as needed
+            node.then(Commands.argument("args", StringArgumentType.greedyString())
+                    .suggests((ctx, builder) -> this.suggestFromHandler(subCommand, ctx, builder))
+                    .executes(ctx -> {
+                        final PlatformSender sender = this.plugin.platform().wrapSender(ctx.getSource().getSender());
+                        final String args = StringArgumentType.getString(ctx, "args");
+                        this.handleCommand(sender, new String[]{subCommand.getName(), args});
+                        return 1;
+                    }));
 
             root.then(node);
         }
@@ -77,23 +76,22 @@ public class PaperChatGamesCommand extends ChatGamesCommand {
         return root.build();
     }
 
-    private ArgumentBuilder<CommandSourceStack, ?> createArgumentNode(final String command, final String argName, final ArgumentType<?> argType) {
-        return Commands.argument(argName, argType)
-                .suggests("start".equals(command) ? this::suggestGameNames : (ctx, builder) -> builder.buildFuture())
-                .executes(ctx -> {
-                    final PlatformSender sender = this.plugin.platform().wrapSender(ctx.getSource().getSender());
-                    final String arg = StringArgumentType.getString(ctx, argName);
-                    this.handleCommand(sender, new String[]{command, arg});
-                    return 1;
-                });
-    }
+    /**
+     * Gets suggestions from the handler's tabComplete method.
+     */
+    private CompletableFuture<Suggestions> suggestFromHandler(
+            final SubCommand subCommand,
+            final CommandContext<CommandSourceStack> ctx,
+            final SuggestionsBuilder builder
+    ) {
+        final PlatformSender sender = this.plugin.platform().wrapSender(ctx.getSource().getSender());
+        final String partial = builder.getRemaining();
+        final List<String> suggestions = this.registry.tabComplete(subCommand, sender, new String[]{partial});
 
-    private CompletableFuture<Suggestions> suggestGameNames(final CommandContext<CommandSourceStack> ctx, final SuggestionsBuilder builder) {
-        for (final GameConfig config : this.plugin.gameRegistry().getAllConfigs()) {
-            builder.suggest(config.getName());
+        for (final String suggestion : suggestions) {
+            builder.suggest(suggestion);
         }
 
         return builder.buildFuture();
     }
-
 }
