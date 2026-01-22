@@ -4,10 +4,11 @@ A Minecraft plugin that adds interactive chat-based minigames to engage your ser
 
 ## Why use ChatGames?
 
-- Instant, lightweight chat minigames that keep your chat active.
-- Multi-platform: same core works across Spigot, Paper, Folia, and Sponge via a platform abstraction layer.
-- Fully configurable games, schedules, messages and reward commands.
-- Small, well-documented, and easy to extend.
+- Instant, lightweight chat minigames that keep your chat active
+- Multi-platform: works across Spigot, Paper, Folia, and Sponge via a platform abstraction layer
+- Fully configurable games, schedules, messages and reward commands
+- AFK detection integration with popular plugins (EssentialsX, CMI, AntiAFKPlus)
+- Small, well-documented, and easy to extend
 
 ## Features
 
@@ -16,306 +17,79 @@ A Minecraft plugin that adds interactive chat-based minigames to engage your ser
   - **Math** - Solve math problems
   - **Unscramble** - Unscramble words
   - **Multiple Choice** - Pick the correct answer from several options
-  - **Reaction** - Respond quickly
-
+  - **Reaction** - Respond quickly (type or click)
 
 - **Automatic Game Scheduling** - Games start automatically at configurable intervals
 - **Customizable Rewards** - Configure commands to run when players win (economy rewards, items, etc.)
+- **AFK Detection** - Optionally exclude AFK players from minimum player count
 
 ## Quick Install
 
-1. Drop the plugin `.jar` into your server's `plugins/` folder.
-2. Start the server once to generate default configurations.
-3. Edit `config.yml`, `en-us.yml`, and the individual game files.
+1. Drop the plugin `.jar` into your server's `plugins/` folder
+2. Start the server once to generate default configurations
+3. Edit `config.yml`, language files, and game configurations as needed
 
 ## Configuration
 
+Configuration files are generated in your plugin's data folder on first run.
+
 ### Main Configuration
 
-<details>
-  <summary>config.yml</summary>
+The main [`config.yml`](common/src/main/resources/config.yml) controls plugin behavior:
 
-  ```yml
-# ChatGames Configuration
-# https://github.com/RareHyperIon/ChatGames
+| Setting | Description |
+|---------|-------------|
+| `language` | Language file to use (default: `en-us`) |
+| `game-interval` | Seconds between automatic games |
+| `minimum-players` | Minimum players online to start games |
+| `automatic-games` | Enable/disable automatic game scheduling |
+| `answer-cooldown-ticks` | Cooldown after wrong answer in multiple choice |
+| `debug` | Enable debug logging |
+| `afk-detection` | AFK player exclusion settings |
 
-# Available: en-us
-language: en-us
+### Language Files
 
-# Interval between automatic games (in seconds)
-game-interval: 300
+Messages are fully customizable via language files. See [`languages/en-us.yml`](common/src/main/resources/languages/en-us.yml) for all available message keys.
 
-# Minimum players online to start automatic games
-minimum-players: 1
-
-# Whether to automatically start games at intervals
-automatic-games: true
-
-# Cooldown after wrong answer in multiple choice (in ticks, 20 ticks = 1 second)
-answer-cooldown-ticks: 60
-
-# Enable debug logging
-debug: false
-  ```
-</details>
-
-<details>
-  <summary>language/en-us.yml</summary>
-
-  ```yml
-# ChatGames Language File - English (US)
-
-# Message shown when a player tries to use a command they don't have access to
-permission: "<red>You don't have permission to use this command.</red>"
-
-# Message shown when ChatGames has been successfully reloaded
-reload: "<green>Successfully reloaded ChatGames!</green>"
-
-# Cooldown message when player tries to answer too quickly after wrong answer
-cooldown: "<red>You cannot answer this question as you've already tried recently.</red>"
-  ```
-</details>
+All messages support [MiniMessage](https://docs.papermc.io/adventure/minimessage/format/) formatting for colors, gradients, click events, and more.
 
 ### Game Configuration
 
-<details>
-  <summary>games/math.yml</summary>
+Each game type has its own configuration file in the `games/` folder:
 
-  ```yml
-name: math
-display-name: "<gold>Math Wizard</gold>"
-timeout: 60 # The time players have to win the game. (in seconds)
+| Game | Config File | Description |
+|------|-------------|-------------|
+| Math | [`math.yml`](common/src/main/resources/games/math.yml) | Solve math equations |
+| Trivia | [`trivia.yml`](common/src/main/resources/games/trivia.yml) | Answer trivia questions |
+| Unscramble | [`unscramble.yml`](common/src/main/resources/games/unscramble.yml) | Unscramble words |
+| Multiple Choice | [`multiple-choice.yml`](common/src/main/resources/games/multiple-choice.yml) | Pick the correct answer |
+| Reaction | [`reaction.yml`](common/src/main/resources/games/reaction.yml) | React quickly (type or click) |
 
-reward-commands:
-  - "give {player} diamond {rand:1-3}"
+#### Common Game Config Options
 
-messages:
-  start: |
-
-    <gold><bold>MATH WIZARD</bold></gold>
-    <gray>Solve the equation below!</gray>
-
-  win: |
-
-    <green><bold>✓</bold> <yellow>{player}</yellow> solved it!</green>
-    <gray>Answer: <white>{answer}</white></gray>
-
-  timeout: |
-
-    <red><bold>✗</bold> Time's up!</red>
-    <gray>Answer: <white>{answer}</white></gray>
-
-
-questions:
-  - ["<yellow>12 + 8 = ?</yellow>", "20"]
-  - ["<yellow>25 - 7 = ?</yellow>", "18"]
-  - ["<yellow>6 × 7 = ?</yellow>", "42"]
-  - ["<yellow>144 ÷ 12 = ?</yellow>", "12"]
-  - ["<yellow>15 + 23 = ?</yellow>", "38"]
-  - ["<yellow>50 - 18 = ?</yellow>", "32"]
-  - ["<yellow>9 × 8 = ?</yellow>", "72"]
-  - ["<yellow>100 ÷ 5 = ?</yellow>", "20"]
-  ```
-</details>
-
-<details>
-  <summary>games/multiple-choice.yml</summary>
-
-  ```yml
-name: multiple choice
-display-name: "<green>Multiple Choice</green>"
-timeout: 45 # The time players have to win the game. (in seconds)
-cooldown: 60 # Ticks to wait after wrong answer (60 ticks = 3 seconds)
+```yaml
+name: game-name              # Internal identifier
+display-name: "<gold>Name</gold>"  # Display name with formatting
+timeout: 60                  # Seconds before game times out
 
 reward-commands:
-  - "give {player} emerald {rand:1-3}"
+  - "give {player} diamond {rand:1-3}"  # Commands to run on win
 
 messages:
-  start: |
+  start: "..."    # Shown when game starts
+  win: "..."      # Shown when someone wins
+  timeout: "..."  # Shown when time runs out
+```
 
-    <green><bold>MULTIPLE CHOICE</bold></green>
-    <gray>Type the correct letter!</gray>
+#### Placeholders
 
-  win: |
-
-    <green><bold>✓</bold> <yellow>{player}</yellow> chose correctly!</green>
-    <gray>Answer: <white>{answer}</white></gray>
-
-  timeout: |
-
-    <red><bold>✗</bold> Nobody answered!</red>
-    <gray>Correct: <white>{answer}</white></gray>
-
-
-questions:
-  q1:
-    question: "<yellow>What is the largest planet in our solar system?</yellow>"
-    answers:
-      - "A. Earth"
-      - "B. Jupiter"
-      - "C. Saturn"
-      - "D. Mars"
-    correct-answer: "B"
-
-  q2:
-    question: "<yellow>Which programming language is Minecraft written in?</yellow>"
-    answers:
-      - "A. Python"
-      - "B. C++"
-      - "C. Java"
-      - "D. JavaScript"
-    correct-answer: "C"
-
-  q3:
-    question: "<yellow>What is 2 + 2 × 2?</yellow>"
-    answers:
-      - "A. 6"
-      - "B. 8"
-      - "C. 4"
-      - "D. 10"
-    correct-answer: "A"
-
-  q4:
-    question: "<yellow>Which mob drops blaze rods?</yellow>"
-    answers:
-      - "A. Ghast"
-      - "B. Blaze"
-      - "C. Wither Skeleton"
-      - "D. Magma Cube"
-    correct-answer: "B"
-  ```
-</details>
-
-<details>
-  <summary>games/reaction.yml</summary>
-
-  ```yml
-name: reaction
-display-name: "<red>Reaction Test</red>"
-timeout: 30 # The time players have to win the game. (in seconds)
-
-reward-commands:
-  - "give {player} diamond {rand:1-3}"
-
-messages:
-  start: |
-
-    <red><bold>REACTION TEST</bold></red>
-    <gray>Be the first to respond!</gray>
-
-  win: |
-
-    <green><bold>✓</bold> <yellow>{player}</yellow> was fastest!</green>
-
-  timeout: |
-
-    <red><bold>✗</bold> Nobody reacted in time!</red>
-
-
-# Variants allow different reaction challenges
-# If answer is empty string "", any message wins (fastest typer)
-# If answer is specified, must type that exact word
-# If answer is "CLICK", then it will be clickable.
-#   - Optional: Add hover="Your text" for custom hover message
-#   - Example: <button hover='Click me!'>Press here</button>
-#   - Without hover attribute, no hover text will be shown
-#   - You can include colors in the hover attribute.
-variants:
-  - name: "Type Fast"
-    challenge: "<gold><bold>Type: <yellow>MINECRAFT</yellow></bold></gold>"
-    answer: "MINECRAFT"
-
-  - name: "First Word"
-    challenge: "<gold><bold>Type any word now!</bold></gold>"
-    answer: ""
-
-  - name: "Click Fast"
-    challenge: "<button hover='Click to win!' win><gold><bold>Click me to win!</bold></gold></button>"
-    answer: "CLICK"
-
-  - name: "Click Fast"
-    challenge: "<yellow>Click the star!</yellow>\n\n<button win>[<gold><bold>⭐</bold></gold>]</button> <button>[<red><bold>❤</bold></red>️]</button> <button>[<green><bold>🟢</bold></green>]</button>"
-    answer: "CLICK"
-
-  - name: "Color"
-    challenge: "<gold><bold>Type: <yellow>RED</yellow></bold></gold>"
-    answer: "RED"
-  ```
-</details>
-
-<details>
-  <summary>games/trivia.yml</summary>
-
-  ```yml
-name: trivia
-display-name: "<aqua>Trivia Time</aqua>"
-timeout: 45 # The time players have to win the game. (in seconds)
-
-reward-commands:
-  - "give {player} emerald {rand:1-3}"
-
-messages:
-  start: |
-
-    <aqua><bold>TRIVIA TIME</bold></aqua>
-    <gray>Answer the question below!</gray>
-
-  win: |
-
-    <green><bold>✓</bold> <yellow>{player}</yellow> got it right!</green>
-    <gray>Answer: <white>{answer}</white></gray>
-
-  timeout: |
-
-    <red><bold>✗</bold> Nobody got it!</red>
-    <gray>Answer: <white>{answer}</white></gray>
-
-
-questions:
-  - ["<yellow>What is the capital of France?</yellow>", "Paris"]
-  - ["<yellow>How many continents are there?</yellow>", "7"]
-  - ["<yellow>What year did the Titanic sink?</yellow>", "1912"]
-  - ["<yellow>What is the largest ocean?</yellow>", "Pacific"]
-  - ["<yellow>Who painted the Mona Lisa?</yellow>", "Leonardo da Vinci"]
-  - ["<yellow>What is the speed of light?</yellow>", "299792458"]
-  - ["<yellow>What is H2O commonly known as?</yellow>", "Water"]
-  ```
-</details>
-
-<details>
-  <summary>games/unscramble.yml</summary>
-
-  ```yml
-name: unscramble
-display-name: "<light_purple>Word Scramble</light_purple>"
-timeout: 60 # The time players have to win the game. (in seconds)
-
-reward-commands:
-  - "give {player} gold_ingot {rand:1-5}"
-
-messages:
-  start: |
-
-    <light_purple><bold>WORD SCRAMBLE</bold></light_purple>
-    <gray>Unscramble the word!</gray>
-
-  win: |
-
-    <green><bold>✓</bold> <yellow>{player}</yellow> unscrambled it!</green>
-    <gray>Word: <white>{answer}</white></gray>
-
-  timeout: |
-
-    <red><bold>✗</bold> Time ran out!</red>
-    <gray>Word: <white>{answer}</white></gray>
-
-words: [
-  "SMARTPHONE", "COMPUTER", "GAMING",
-  "KEYBOARD", "MINECRAFT", "DIAMOND",
-  "ADVENTURE", "TREE", "GOLD", "LOG"
-]
-  ```
-</details>
+| Placeholder | Description |
+|-------------|-------------|
+| `{player}` | Winner's username |
+| `{answer}` | The correct answer |
+| `{name}` | Game display name |
+| `{timeout}` | Timeout in seconds |
+| `{rand:min-max}` | Random number in range (rewards only) |
 
 ## Supported Platforms & Versions
 
@@ -326,35 +100,56 @@ words: [
 | Folia    | 1.20.6 – 1.21.x    |
 | Sponge   | 1.21.x             |
 
+The Java 8 runtime is currently supported, but EOL and will be discontinued with little prior notice. Please move to at least Java 21.
+
 ## Commands
 
-| Command                   | Permission         | Description                      |
-|---------------------------|--------------------|----------------------------------|
-| `/chatgames reload`       | `chatgames.reload` | Reload all configurations        |
-| `/chatgames start <game>` | `chatgames.start`  | Manually start a game            |
-| `/chatgames stop`         | `chatgames.stop`   | Stop the current game            |
-| `/chatgames list`         | `chatgames.list`   | List all available games         |
-| `/chatgames info`         | `chatgames.info`   | Show plugin information          |
-| `/chatgames toggle`       | `chatgames.toggle` | Toggle automatic games on or off |
-
+| Command | Permission | Description |
+|---------|------------|-------------|
+| `/chatgames help` | none | Show command help |
+| `/chatgames reload` | `chatgames.reload` | Reload all configurations |
+| `/chatgames start <game>` | `chatgames.start` | Manually start a game |
+| `/chatgames stop` | `chatgames.stop` | Stop the current game |
+| `/chatgames list` | `chatgames.list` | List all available games |
+| `/chatgames info` | `chatgames.info` | Show plugin information |
+| `/chatgames toggle` | `chatgames.toggle` | Toggle automatic games |
 
 ## Permissions
 
-| Permission         | Description                        |
-|--------------------|------------------------------------| 
-| `chatgames.reload` | Allows reloading the plugin        |
-| `chatgames.start`  | Allows manually starting a game    |
-| `chatgames.stop`   | Allows stopping the current game   |
-| `chatgames.list`   | Allows listing all available games |
-| `chatgames.info`   | Allows viewing plugin information  |
-| `chatgames.toggle` | Allows toggling automatic games    |
+| Permission | Description |
+|------------|-------------|
+| `chatgames.reload` | Reload the plugin |
+| `chatgames.start` | Manually start games |
+| `chatgames.stop` | Stop the current game |
+| `chatgames.list` | List available games |
+| `chatgames.info` | View plugin information |
+| `chatgames.toggle` | Toggle automatic games |
 
+## AFK Detection
+
+ChatGames can exclude AFK players from the minimum player count. Enable this in `config.yml`:
+
+```yaml
+afk-detection:
+  enabled: true
+  providers: []  # Empty = use all available
+```
+
+We recommend leaving providers blank unless your development team has implemented a custom AFK provider.
+
+Supported providers by platform:
+
+| Platform | Providers |
+|----------|-----------|
+| Spigot | `essentialsx`, `cmi`, `antiafkplus` |
+| Paper/Folia | `essentialsx`, `cmi`, `antiafkplus`, `paper-idle` |
+| Sponge | `nucleus` |
 
 ## Troubleshooting
 
 **Games not starting:**
 - Check `minimum-players` setting in `config.yml`
-- Verify enough players are online
+- Verify enough non-AFK players are online (if AFK detection is enabled)
 - Check console for errors
 
 **Rewards not working:**
@@ -365,3 +160,11 @@ words: [
 - Verify YAML syntax in game config files
 - Use `/chatgames reload` after making changes
 - Check console for parsing errors
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for information on the codebase architecture and how to contribute.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
