@@ -24,6 +24,7 @@ public final class GameConfig {
     private final List<ReactionVariant> reactionVariants;
     private final List<MultipleChoiceQuestion> multipleChoiceQuestions;
 
+    private final OpenTriviaSettings openTriviaSettings;
     private final FuzzyMatchSettings fuzzyMatchSettings;
 
     public GameConfig(final String type, final Config configuration) {
@@ -44,6 +45,7 @@ public final class GameConfig {
         this.reactionVariants = this.loadReactionVariants(configuration.getList("variants"));
         this.multipleChoiceQuestions = this.loadMultipleChoiceQuestions(configuration.getConfigurationSection("questions"));
 
+        this.openTriviaSettings = this.loadOpenTriviaSettings(configuration.getConfigurationSection("open-trivia-db"));
         this.fuzzyMatchSettings = this.loadFuzzyMatchSettings(configuration.getConfigurationSection("fuzzy-matching"));
     }
 
@@ -182,6 +184,72 @@ public final class GameConfig {
         final int perWordDistance = section.getInt("per-word-distance", 1);
 
         return new FuzzyMatchSettings(enabled, minLength, mode, baseDistance, perWordDistance);
+    }
+
+    private OpenTriviaSettings loadOpenTriviaSettings(final Config section) {
+        if (section == null) {
+            return new OpenTriviaSettings(false, new ArrayList<>(), "", 20, 5);
+        }
+
+        final boolean enabled = section.getBoolean("enabled", false);
+        final List<?> categoryList = section.getList("categories");
+        final List<Integer> categories = new ArrayList<>();
+        if (categoryList != null) {
+            for (final Object obj : categoryList) {
+                if (obj instanceof Number) {
+                    categories.add(((Number) obj).intValue());
+                }
+            }
+        }
+        final String difficulty = section.getString("difficulty", "");
+        final int cacheSize = section.getInt("cache-size", 20);
+        final int refillThreshold = section.getInt("refill-threshold", 5);
+
+        return new OpenTriviaSettings(enabled, categories, difficulty, cacheSize, refillThreshold);
+    }
+
+    public static final class OpenTriviaSettings {
+
+        private final boolean enabled;
+        private final List<Integer> categories;
+        private final String difficulty;
+        private final int cacheSize;
+        private final int refillThreshold;
+
+        public OpenTriviaSettings(
+                final boolean enabled,
+                final List<Integer> categories,
+                final String difficulty,
+                final int cacheSize,
+                final int refillThreshold
+        ) {
+            this.enabled = enabled;
+            this.categories = categories;
+            this.difficulty = difficulty;
+            this.cacheSize = cacheSize;
+            this.refillThreshold = refillThreshold;
+        }
+
+        public boolean isEnabled() {
+            return this.enabled;
+        }
+
+        public List<Integer> getCategories() {
+            return this.categories;
+        }
+
+        public String getDifficulty() {
+            return this.difficulty;
+        }
+
+        public int getCacheSize() {
+            return this.cacheSize;
+        }
+
+        public int getRefillThreshold() {
+            return this.refillThreshold;
+        }
+
     }
 
     public static final class FuzzyMatchSettings {

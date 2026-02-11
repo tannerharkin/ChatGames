@@ -21,7 +21,19 @@ public class MultipleChoiceGame extends AbstractGame {
 
     public MultipleChoiceGame(final ChatGamesCore plugin, final GameConfig config) {
         super(plugin, config);
-        this.question = this.selectRandom(config.getMultipleChoiceQuestions());
+
+        final GameConfig.OpenTriviaSettings openTriviaSettings = config.getOpenTriviaSettings();
+
+        // Try API first if enabled
+        final Optional<GameConfig.MultipleChoiceQuestion> apiQuestion =
+                plugin.openTriviaService().getMultipleChoiceQuestion(openTriviaSettings);
+
+        if (apiQuestion.isPresent()) {
+            this.question = apiQuestion.get();
+        } else {
+            this.question = this.selectRandom(config.getMultipleChoiceQuestions());
+        }
+
         this.answerOptions = extractAnswerOptions(this.question.answers());
     }
 

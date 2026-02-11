@@ -15,7 +15,18 @@ public class TriviaGame extends AbstractGame {
 
     public TriviaGame(final ChatGamesCore plugin, final GameConfig config) {
         super(plugin, config);
-        this.question = this.selectRandom(config.getQuestions());
+
+        final GameConfig.OpenTriviaSettings openTriviaSettings = config.getOpenTriviaSettings();
+
+        // Try API first if enabled
+        final Optional<GameConfig.QuestionAnswer> apiQuestion =
+                plugin.openTriviaService().getTriviaQuestion(openTriviaSettings);
+
+        if (apiQuestion.isPresent()) {
+            this.question = apiQuestion.get();
+        } else {
+            this.question = this.selectRandom(config.getQuestions());
+        }
     }
 
     @Override

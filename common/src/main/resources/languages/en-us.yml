@@ -33,3 +33,6 @@ start-unknown-game: "<red>Unknown game: %game%</red>"
 
 # Info Command
 info: "<gold>ChatGames <white>•</white> <yellow>%version%</yellow></gold>\n<green>A simple plugin that adds chat-based games by <aqua>%authors%</aqua></green>"
+
+# Open Trivia DB
+true-or-false-prefix: "True or false?"

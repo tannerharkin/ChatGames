@@ -5,6 +5,7 @@ import dev.rarehyperion.chatgames.command.CommandRegistry;
 import dev.rarehyperion.chatgames.config.ConfigManager;
 import dev.rarehyperion.chatgames.game.GameManager;
 import dev.rarehyperion.chatgames.game.GameRegistry;
+import dev.rarehyperion.chatgames.provider.opentdb.OpenTriviaService;
 import dev.rarehyperion.chatgames.platform.Platform;
 import dev.rarehyperion.chatgames.versioning.VersionChecker;
 import net.kyori.adventure.text.Component;
@@ -23,6 +24,7 @@ public final class ChatGamesCore {
     private GameRegistry gameRegistry;
     private GameManager gameManager;
     private CommandRegistry commandRegistry;
+    private OpenTriviaService openTriviaService;
 
     public ChatGamesCore(final Platform platform) {
         this.platform = platform;
@@ -41,6 +43,9 @@ public final class ChatGamesCore {
         this.gameManager = new GameManager(this, this.configManager, this.gameRegistry);
 
         this.configManager.load();
+
+        // Initialize Open Trivia DB service (lazy initialization when first used)
+        this.openTriviaService = new OpenTriviaService(this);
 
         // Initialize AFK detection
         this.platform.registerAfkProviders(this.afkManager.getRegistry());
@@ -119,6 +124,10 @@ public final class ChatGamesCore {
 
     public AfkManager afkManager() {
         return this.afkManager;
+    }
+
+    public OpenTriviaService openTriviaService() {
+        return this.openTriviaService;
     }
 
 }

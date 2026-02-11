@@ -68,3 +68,27 @@ questions:
   - ["<yellow>Who painted the Mona Lisa?</yellow>", "Leonardo da Vinci"]
   - ["<yellow>What is the speed of light?</yellow>", "299792458"]
   - ["<yellow>What is H2O commonly known as?</yellow>", "Water"]
+
+# Open Trivia DB API Settings
+# Provides trivia questions from an external source, and is free, but the questions
+# are not always of the highest quality. There are no guarantees all questions will be
+# appropriate either, so use at your own discretion.
+# See https://opentdb.com/api_category.php for a full list of category IDs
+open-trivia-db:
+  # Enable API integration (default: false)
+  enabled: false
+
+  # Categories to fetch from (empty = all categories)
+  # Example category IDs:
+  #   9 = General Knowledge, 17 = Science & Nature, 23 = History
+  categories: []
+
+  # Question difficulty (empty = all difficulties)
+  # Options: easy, medium, hard
+  difficulty: ""
+
+  # Cache size - questions to keep ready (default: 20)
+  cache-size: 20
+
+  # Refill threshold - refill when cache drops below this (default: 5)
+  refill-threshold: 5
