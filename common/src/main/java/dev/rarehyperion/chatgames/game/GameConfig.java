@@ -24,6 +24,8 @@ public final class GameConfig {
     private final List<ReactionVariant> reactionVariants;
     private final List<MultipleChoiceQuestion> multipleChoiceQuestions;
 
+    private final FuzzyMatchSettings fuzzyMatchSettings;
+
     public GameConfig(final String type, final Config configuration) {
         this.name = configuration.getString("name", "Unknown");
         this.displayName = configuration.getString("display-name", this.name);
@@ -41,6 +43,8 @@ public final class GameConfig {
         this.questions = this.loadQuestions(configuration.getList("questions"));
         this.reactionVariants = this.loadReactionVariants(configuration.getList("variants"));
         this.multipleChoiceQuestions = this.loadMultipleChoiceQuestions(configuration.getConfigurationSection("questions"));
+
+        this.fuzzyMatchSettings = this.loadFuzzyMatchSettings(configuration.getConfigurationSection("fuzzy-matching"));
     }
 
     private List<QuestionAnswer> loadQuestions(final List<?> list) {
@@ -156,6 +160,72 @@ public final class GameConfig {
 
     public List<MultipleChoiceQuestion> getMultipleChoiceQuestions() {
         return this.multipleChoiceQuestions;
+    }
+
+    public OpenTriviaSettings getOpenTriviaSettings() {
+        return this.openTriviaSettings;
+    }
+
+    public FuzzyMatchSettings getFuzzyMatchSettings() {
+        return this.fuzzyMatchSettings;
+    }
+
+    private FuzzyMatchSettings loadFuzzyMatchSettings(final Config section) {
+        if (section == null) {
+            return new FuzzyMatchSettings(false, 4, "per-word", 1, 1);
+        }
+
+        final boolean enabled = section.getBoolean("enabled", false);
+        final int minLength = section.getInt("min-length", 4);
+        final String mode = section.getString("mode", "per-word");
+        final int baseDistance = section.getInt("base-distance", 1);
+        final int perWordDistance = section.getInt("per-word-distance", 1);
+
+        return new FuzzyMatchSettings(enabled, minLength, mode, baseDistance, perWordDistance);
+    }
+
+    public static final class FuzzyMatchSettings {
+
+        private final boolean enabled;
+        private final int minLength;
+        private final String mode;
+        private final int baseDistance;
+        private final int perWordDistance;
+
+        public FuzzyMatchSettings(
+                final boolean enabled,
+                final int minLength,
+                final String mode,
+                final int baseDistance,
+                final int perWordDistance
+        ) {
+            this.enabled = enabled;
+            this.minLength = minLength;
+            this.mode = mode;
+            this.baseDistance = baseDistance;
+            this.perWordDistance = perWordDistance;
+        }
+
+        public boolean isEnabled() {
+            return this.enabled;
+        }
+
+        public int getMinLength() {
+            return this.minLength;
+        }
+
+        public String getMode() {
+            return this.mode;
+        }
+
+        public int getBaseDistance() {
+            return this.baseDistance;
+        }
+
+        public int getPerWordDistance() {
+            return this.perWordDistance;
+        }
+
     }
 
     public static final class QuestionAnswer {

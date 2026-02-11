@@ -2,6 +2,44 @@ name: trivia
 display-name: "<aqua>Trivia Time</aqua>"
 timeout: 45 # The time players have to win the game. (in seconds)
 
+# Fuzzy matching for trivia answers
+# Uses Levenshtein distance to allow minor typos/variations in player answers.
+# Levenshtein distance counts the minimum single-character edits (insertions,
+# deletions, or substitutions) needed to transform one string into another.
+# For example: "Paris" vs "Pars" = distance 1, "Paris" vs "Prais" = distance 2
+fuzzy-matching:
+  # Enable fuzzy matching (default: true)
+  enabled: true
+
+  # Minimum answer length required for fuzzy matching to be used.
+  # Answers shorter than this will only use case-insensitive exact matching.
+  # This prevents false positives on short answers (e.g., "CPU" vs "GPU" = distance 1).
+  # Default: 4
+  min-length: 4
+
+  # Matching mode determines how the maximum allowed distance is calculated.
+  # Options:
+  #   "fixed"    - Uses base-distance as an absolute limit for all answers.
+  #                Good for consistent strictness regardless of answer length.
+  #   "per-word" - Calculates limit as: base-distance + (word-count * per-word-distance)
+  #                More forgiving for longer, multi-word answers.
+  # Default: per-word
+  mode: per-word
+
+  # Base distance - the starting number of allowed character differences.
+  # With mode "fixed", this is the total allowed distance.
+  # With mode "per-word", this is added to the per-word calculation.
+  # Default: 1
+  base-distance: 1
+
+  # Per-word distance - additional allowed differences for each word in the answer.
+  # Only used when mode is "per-word".
+  # Example with base-distance: 1 and per-word-distance: 1:
+  #   "Paris" (1 word) = 1 + (1 * 1) = 2 allowed edits
+  #   "Leonardo da Vinci" (3 words) = 1 + (3 * 1) = 4 allowed edits
+  # Default: 1
+  per-word-distance: 1
+
 reward-commands:
   - "give {player} emerald {rand:1-3}"
 

@@ -4,6 +4,7 @@ import dev.rarehyperion.chatgames.ChatGamesCore;
 import dev.rarehyperion.chatgames.game.AbstractGame;
 import dev.rarehyperion.chatgames.game.GameConfig;
 import dev.rarehyperion.chatgames.util.MessageUtil;
+import dev.rarehyperion.chatgames.util.StringUtil;
 import net.kyori.adventure.text.Component;
 
 import java.util.Optional;
@@ -24,7 +25,37 @@ public class TriviaGame extends AbstractGame {
 
     @Override
     public boolean checkAnswer(final String answer) {
-        return answer.equalsIgnoreCase(this.question.answer());
+        final String correctAnswer = this.question.answer();
+
+        // Check exact match first (case-insensitive)
+        if (answer.equalsIgnoreCase(correctAnswer)) {
+            return true;
+        }
+
+        // Apply fuzzy matching if enabled, answer meets minimum length, and is not purely numeric
+        final GameConfig.FuzzyMatchSettings fuzzySettings = this.config.getFuzzyMatchSettings();
+        if (fuzzySettings.isEnabled()
+                && correctAnswer.length() >= fuzzySettings.getMinLength()
+                && !StringUtil.isNumeric(correctAnswer, '-', '.')) {
+            final String mode = fuzzySettings.getMode();
+            if ("per-word".equalsIgnoreCase(mode)) {
+                return StringUtil.fuzzyMatchByWords(
+                        answer,
+                        correctAnswer,
+                        fuzzySettings.getBaseDistance(),
+                        fuzzySettings.getPerWordDistance()
+                );
+            } else {
+                // Fixed mode - use base distance only
+                return StringUtil.fuzzyMatch(
+                        answer,
+                        correctAnswer,
+                        fuzzySettings.getBaseDistance()
+                );
+            }
+        }
+
+        return false;
     }
 
     @Override

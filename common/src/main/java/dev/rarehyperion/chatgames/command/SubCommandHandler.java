@@ -21,7 +21,6 @@ public interface SubCommandHandler {
 
     /**
      * Returns the permission required to use this command, or null if no permission is needed.
-     * This is the single source of truth for permission checks.
      *
      * @return The permission string, or null if no permission required.
      */
